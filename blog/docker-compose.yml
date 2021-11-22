@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+  php:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile.dev
+    volumes:
+      - .:/var/www/html
+    networks:
+      - backend
+
+  nginx:
+    restart: always
+    image: bitnami/nginx:latest
+    ports:
+      - 8001:80
+    depends_on:
+      - php
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/nginx.conf:/opt/bitnami/nginx/conf/server_blocks/nginx.conf
+    labels:
+      - traefik.http.routers.blog.rule=Host(`blog.mkoziol.local`)
+      - traefik.http.services.blog.loadbalancer.server.port=8001
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+    external: true
+    name: backend
